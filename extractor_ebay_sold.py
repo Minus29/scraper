@@ -1,10 +1,11 @@
 import json
 import re
+import time
+from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
-import time
 
-BASE_URL = "https://www.ebay.com/b/Wristwatches/31387/bn_2408451?_udlo=500&LH_Sold=1&Brand=A%252E%2520Lange%2520%2526%2520S%25C3%25B6hne%7CAlain%2520Silberstein%7CAngelus%7CAntoine%2520Preziuso%7CAquaswiss%7CArnold%2520%2526%2520Son%7CAudemars%2520Piguet%7CAzimuth%7CBaume%2520%2526%2520Mercier%7CBedat%2520%2526%2520Co%7CBlancpain%7CBOVET%7CBoucheron%7CBOMBERG%7CBreguet%7CBremont%7CBreitling%7CBucherer%7CBvlgari%7CCarl%2520F%252E%2520Bucherer%7CCarrera%7CCartier%7CChaumet%7CChopard%7CChristopher%2520Ward%7CChronographe%2520Suisse%7CChronoswiss%7CCuervo%2520y%2520Sobrinos%7CCvstos%7Cde%2520GRISOGONO%7CDeWitt%7CDOXA%7CDubey%2520%2526%2520Schaldenbrand%7CEBEL%7CEberhard%2520%2526%2520Co%252E%7CEberhard%7CErnest%2520Borel%7CF%252EP%252E%2520Journe%7CFavre%2520Leuba%7CFranck%2520Muller%7CGerminal%2520Voltaire%7CGirard%252DPerregaux%7CGlash%25C3%25BCtte%2520Original%7CGrand%2520Seiko%7CG%25C3%25BCbelin%7CH%252E%2520Moser%7CH%2526M%7CHarry%2520Winston%7CHublot%7CIWC%7CJACOB%2520%2526%2520Co%252E%7CJaquet%2520Droz%7CJEANRICHARD%7CJorg%2520Gray%7CJuvenia%7CLemania%7CLe%2520Jour%7CLeonidas%7CLongines%7CLouis%2520Vuitton%7CMAD%7CMaurice%2520Lacroix%7CMathey%252DTissot%7CMeisterSinger%7CMichel%2520Jordi%7CMontblanc%7CMOMODESIGN%7CNivada%2520Grenchen%7CNIVADA%7COris%7CPanerai%7CParmigiani%2520Fleurier%7CPatek%2520Philippe%7CPaul%2520Breguette%7CPaul%2520Picot%7CPerrelet%7CPiaget%7CRalph%2520Lauren%7CRichard%2520Mille%7CRoger%2520Dubuis%7CRolex%7CTAG%2520Heuer%7CSzanto%7CTavannes%7CTiffany%2520%2526%2520Co%252E%7CU%252DBoat%7CUlysse%2520Nardin%7CTourneau%7CUniversal%2520Gen%25C3%25A8ve%7CVacheron%2520Constantin%7CVan%2520Cleef%2520%2526%2520Arpels%7CVulcain%7CWaltham%7CYema%7CWakmann&mag=1"
+BASE_URL = "https://www.ebay.com/b/Wristwatches/31387/bn_2408451?_udlo=500&LH_Sold=1&Brand=A%252E%2520Lange%2520%2526%2520S%25C3%25B6hne%7CAlain%2520Silberstein%7CAngelus%7CAntoine%2520Preziuso%7CAquaswiss%7CArnold%2520%2526%2520Son%7CAudemars%2520Piguet%7CAzimuth%7CBaume%2520%2526%2520Mercier%7CBedat%2520%2520Co%7CBlancpain%7CBOVET%7CBoucheron%7CBOMBERG%7CBreguet%7CBremont%7CBreitling%7CBucherer%7CBvlgari%7CCarl%2520F%252E%2520Bucherer%7CCarrera%7CCartier%7CChaumet%7CChopard%7CChristopher%2520Ward%7CChronographe%2520Suisse%7CChronoswiss%7CCuervo%2520y%2520Sobrinos%7CCvstos%7Cde%2520GRISOGONO%7CDeWitt%7CDOXA%7CDubey%2520%2520Schaldenbrand%7CEBEL%7CEberhard%2520%2520Co%252E%7CEberhard%7CErnest%2520Borel%7CF%252EP%252E%2520Journe%7CFavre%2520Leuba%7CFranck%2520Muller%7CGerminal%2520Voltaire%7CGirard%252DPerregaux%7CGlash%25C3%25BCtte%2520Original%7CGrand%2520Seiko%7CG%25C3%25BCbelin%7CH%252E%2520Moser%7CH%2526M%7CHarry%2520Winston%7CHublot%7CIWC%7CJACOB%2520%2520Co%252E%7CJaquet%2520Droz%7CJEANRICHARD%7CJorg%2520Gray%7CJuvenia%7CLemania%7CLe%2520Jour%7CLeonidas%7CLongines%7CLouis%2520Vuitton%7CMAD%7CMaurice%2520Lacroix%7CMathey%252DTissot%7CMeisterSinger%7CMichel%2520Jordi%7CMontblanc%7CMOMODESIGN%7CNivada%2520Grenchen%7CNIVADA%7COris%7CPanerai%7CParmigiani%2520Fleurier%7CPatek%2520Philippe%7CPaul%2520Breguette%7CPaul%2520Picot%7CPerrelet%7CPiaget%7CRalph%2520Lauren%7CRichard%2520Mille%7CRoger%2520Dubuis%7CRolex%7CTAG%2520Heuer%7CSzanto%7CTavannes%7CTiffany%2520%2520Co%252E%7CU%252DBoat%7CUlysse%2520Nardin%7CTourneau%7CUniversal%2520Gen%25C3%25A8ve%7CVacheron%2520Constantin%7CVan%2520Cleef%2520%2520Arpels%7CVulcain%7CWaltham%7CYema%7CWakmann&mag=1"
 
 HEADERS = {
     "User-Agent": (
@@ -12,23 +13,128 @@ HEADERS = {
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/120.0.0.0 Safari/537.36"
     ),
-    "Accept-Language": "es-CL,es;q=0.9,en;q=0.8"
+    "Accept-Language": "es-CL,es;q=0.9,en;q=0.8",
 }
 
 products_data = []
 page = 1
+session = requests.Session()
+session.headers.update(HEADERS)
+
+
+def clean_text(text):
+    return re.sub(r"\s+", " ", text or "").strip()
+
+
+def safe_get_text(el):
+    return clean_text(el.get_text(" ", strip=True)) if el else None
+
+
+def extract_item_specifics(soup):
+    specifics = {}
+
+    for row in soup.select("div.ux-labels-values"):
+        label_el = row.select_one(".ux-labels-values__labels span")
+        value_el = row.select_one(".ux-labels-values__values")
+        label = safe_get_text(label_el)
+        value = safe_get_text(value_el)
+        if label and value:
+            specifics[label.rstrip(":")] = value
+
+    for dl in soup.select("dl.ux-attrs__list"):
+        dts = dl.select("dt")
+        dds = dl.select("dd")
+        for dt, dd in zip(dts, dds):
+            label = safe_get_text(dt)
+            value = safe_get_text(dd)
+            if label and value:
+                specifics[label.rstrip(":")] = value
+
+    return specifics
+
+
+def fetch_description_text(desc_url):
+    if not desc_url:
+        return None
+    try:
+        desc_res = session.get(desc_url, timeout=20)
+        desc_soup = BeautifulSoup(desc_res.text, "lxml")
+        return clean_text(desc_soup.get_text(" ", strip=True))
+    except Exception:
+        return None
+
+
+def fetch_product_details(url):
+    try:
+        res = session.get(url, timeout=20)
+        soup = BeautifulSoup(res.text, "lxml")
+
+        sold_date = None
+        ended_el = soup.select_one(".vi-end-loc span") or soup.select_one(
+            "span.vi-buybox-price--secondary"
+        )
+        if ended_el:
+            ended_text = safe_get_text(ended_el)
+            if ended_text and "Ended" in ended_text:
+                sold_date = ended_text.replace("Ended:", "").strip()
+
+        condition_el = (
+            soup.select_one("div.x-item-condition-text")
+            or soup.select_one("#vi-itm-cond")
+            or soup.select_one("span.vi-condition")
+        )
+        condition = safe_get_text(condition_el)
+
+        seller_el = soup.select_one("span.mbg-nw") or soup.select_one(
+            "a.ux-seller-section__item--seller"
+        )
+        seller_name = safe_get_text(seller_el)
+
+        shipping_el = soup.select_one("#shSummary") or soup.select_one(
+            "div.ux-labels-values--shipping"
+        )
+        shipping = safe_get_text(shipping_el)
+
+        item_specifics = extract_item_specifics(soup)
+
+        desc_iframe = soup.select_one("#desc_ifr")
+        desc_url = (
+            desc_iframe["src"]
+            if desc_iframe and desc_iframe.has_attr("src")
+            else None
+        )
+        description = fetch_description_text(desc_url)
+
+        return {
+            "soldDate": sold_date,
+            "condition": condition,
+            "sellerName": seller_name,
+            "shipping": shipping,
+            "itemSpecifics": item_specifics,
+            "description": description,
+        }
+    except Exception:
+        return {
+            "soldDate": None,
+            "condition": None,
+            "sellerName": None,
+            "shipping": None,
+            "itemSpecifics": {},
+            "description": None,
+        }
+
 
 while True:
     url = f"{BASE_URL}&_pgn={page}"
-    print(f"📄 Scrapeando página {page}")
+    print(f"Scrapeando pagina {page}")
 
-    response = requests.get(url, headers=HEADERS)
+    response = session.get(url)
     soup = BeautifulSoup(response.text, "lxml")
 
     products = soup.select("div.brwrvr__item-card__body")
 
     if page > 10:
-        print("🚫 No hay más productos.")
+        print("No hay mas productos.")
         break
 
     for product in products:
@@ -37,29 +143,48 @@ while True:
         img_el = product.select_one("img")
         link_el = product.select_one("a[href]")
 
-        title = title_el.get_text(strip=True) if title_el else "Sin título"
+        title = title_el.get_text(strip=True) if title_el else "Sin titulo"
 
         price = None
-
         if price_el:
-         price_raw = price_el.get_text()
-         price = float(re.sub(r"[^\d.]", "", price_raw))
+            price_raw = price_el.get_text()
+            price = float(re.sub(r"[^\d.]", "", price_raw)) if price_raw else None
 
         image = (
             img_el.get("data-src")
             or img_el.get("data-img-src")
             or img_el.get("src")
-            if img_el else "Sin imagen"
+            if img_el
+            else "Sin imagen"
         )
 
         link = link_el["href"] if link_el else "Sin link"
+        full_url = urljoin("https://www.ebay.com", link)
 
-        products_data.append({
-            "title": title,
-            "price": price,
-            "image": image,
-            "link": link
-        })
+        if title.lower() == "shop on ebay":
+            continue
+
+        details = fetch_product_details(full_url)
+
+        products_data.append(
+            {
+                "source": "ebay",
+                "externalId": "",
+                "title": title,
+                "body": details.get("description"),
+                "images": [image] if image else [],
+                "status": {"soldStatus": "sold", "soldDate": details.get("soldDate") or "N/A"},
+                "poster": {
+                    "name": details.get("sellerName") or "N/A",
+                    "profile": "N/A",
+                },
+                "price": {"amount": price, "currency": "USD"},
+                "condition": details.get("condition"),
+                "shipping": details.get("shipping"),
+                "itemSpecifics": details.get("itemSpecifics") or {},
+                "url": full_url,
+            }
+        )
 
     page += 1
     time.sleep(1.5)
@@ -67,4 +192,4 @@ while True:
 with open("extractor_ebay_sold.json", "w", encoding="utf-8") as f:
     json.dump(products_data, f, indent=2, ensure_ascii=False)
 
-print(f"\n✅ Total productos guardados: {len(products_data)}")
+print(f"\nTotal productos guardados: {len(products_data)}")
